@@ -1,0 +1,35 @@
+labels:
+  app: web-app
+  tier: fontend
+
+metadata:
+  appVersion: "1.0.0"
+  releaseName: new-release-v1.0
+
+nginxAnnotations:
+  nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+
+podAffinities:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: type
+            operator: In
+            values:
+            - frontend
+
+replicaCount: 3
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 50
+
+otherCustomizations:
+  resourceLimits:
+    cpu: "500m"
+    memory: "512Mi"
+  serviceType: ClusterIP

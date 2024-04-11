@@ -3,11 +3,11 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: psql-dev-cm
+  name: postgres-secret
   labels:
     app: psql
 data:
-  POSTGRES_DB: db
+  POSTGRES_DB: testdb
   POSTGRES_USER: user
   POSTGRES_PASSWORD: password
   PGDATA: /var/lib/postgresql/data/k8s
@@ -23,11 +23,11 @@ spec:
   capacity:
     storage: 1Gi
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: manual
+  storageClassName: gp2
   hostPath:
-      path: /data/postgres
+      path: /data/postgresql
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -35,11 +35,11 @@ metadata:
   name: postgres-pvc
 spec:
   selector:
-    matchLabels:  #Select a volume with this labels
+    matchLabels: 
       app: psql
       type: local
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
       storage: 1Gi
@@ -53,7 +53,7 @@ metadata:
     app: psql 
     type: local
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: psql
@@ -81,7 +81,7 @@ spec:
              cpu: "500m"       # Limit CPU usage to 500 milliCPU (0.5 CPU core)
         envFrom:
         - configMapRef:
-           name: psql-dev-cm
+           name: postgres-secret
         volumeMounts:
         - name: postgres-data
           mountPath: /var/lib/postgresql/data
@@ -98,9 +98,8 @@ spec:
   selector:
     app:  psql
     type: local
-  type:  NodePort
+  type:  ClusterIP
   ports:
   - name:  psql
     port:  5432
-    nodePort: 30100
     protocol: TCP

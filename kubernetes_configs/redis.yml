@@ -4,21 +4,31 @@
 # Ensure an example of liveliness, readiness, and startup probes are documented.
 
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: redis-cache
+  name: redis
 spec:
+  serviceName: redis
   replicas: 3
   selector:
     matchLabels:
-      app: redis-cache
+      app: redis
   template:
     metadata:
       labels:
-        app: redis-cache
+        app: redis
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: type
+                operator: In
+                values:
+                - cache
       containers:
-      - name: redis-cache
+      - name: redis
         image: redis:latest
         ports:
         - containerPort: 6379
@@ -44,15 +54,6 @@ spec:
             port: 6379
           failureThreshold: 30
           periodSeconds: 10
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: type
-            operator: In
-            values:
-            - cache
 ---
 apiVersion: v1
 kind: Service

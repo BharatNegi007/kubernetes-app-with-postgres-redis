@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-deployment
+  labels:
+    {{- toYaml .Values.labels | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: web-app
+  template:
+    metadata:
+      labels:
+        {{- toYaml .Values.labels | nindent 8 }}
+      annotations:
+        {{- toYaml .Values.nginxAnnotations | nindent 8 }}
+    spec:
+      affinity:
+        {{- toYaml .Values.podAffinities | nindent 8 }}
+      containers:
+        - name: web-app
+          image: ngnix:latest
+          ports:
+            - containerPort: 80
+          resources:
+            limits:
+              cpu: {{ .Values.otherCustomizations.resourceLimits.cpu }}
+              memory: {{ .Values.otherCustomizations.resourceLimits.memory }}

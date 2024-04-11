@@ -5,22 +5,32 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: web-server
+  name: web-app
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
-      app: web-server
+      app: web-app
   template:
     metadata:
       labels:
-        app: web-server
+        app: web-app
     spec:
       containers:
-      - name: web-server
-        image: nginx:latest
+      - name: web-app
+        image: gcr.io/google-samples/hello-app:2.0
+        imagePullPolicy: Never
         ports:
         - containerPort: 80
+        env:
+          - name: POSTGRESQL_HOST
+            value: psql-service-np
+          - name: POSTGRESQL_PORT
+            value: "5432"
+          - name: REDIS_HOST
+            value: redis-service
+          - name: REDIS_PORT
+            value: "6379"
         resources:
           requests:
             memory: "64Mi"
@@ -47,7 +57,7 @@ spec:
           failureThreshold: 30
           periodSeconds: 10
 ---
-apiVersion: autoscaling/v2beta2
+apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: web-server-autoscaler
@@ -72,26 +82,16 @@ spec:
         type: Utilization
         averageUtilization: 70
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: v1
+kind: Service
 metadata:
-  name: web-server-ingress
-  annotations:
-    kubernetes.io/ingress.class: nginx
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  name: webapp-service
 spec:
-  tls:
-  - hosts:
-    - your.domain.com
-    secretName: tls-secret
-  rules:
-  - host: your.domain.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: web-server
-            port:
-              number: 80
+  selector:
+    app: web-server
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: NodePort   
+
